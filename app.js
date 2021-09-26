@@ -19,6 +19,14 @@ const io = socketIO(server);
 const qrcodeGen = require('qrcode-terminal');
 const GroupChat = require('whatsapp-web.js/src/structures/GroupChat');
 app.use(cors());
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000', 'https://pokemon-proyect.vercel.app'); //**cambio** */ update to match the domain you will make the request from//aca habia un 3000!
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true
