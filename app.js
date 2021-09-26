@@ -11,13 +11,14 @@ const axios = require('axios');
 const mime = require('mime-types');
 const cors = require('cors')
 const port = process.env.PORT || 8000;
-const { textsGenerator } = require('./_textGenerator.js');
+const { textsGenerator } = require('./_textGenerator.ts');
 // const { GroupChat } = require('whatsapp-web.js');
 const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 const qrcodeGen = require('qrcode-terminal');
 const GroupChat = require('whatsapp-web.js/src/structures/GroupChat');
+
 
 app.use(cors())
 
@@ -61,30 +62,25 @@ app.get("/get", (req, res) => {
 })
 
 app.get('/', (req, res) => {
-  client.removeAllListeners()
   res.sendFile('index.html', {
     root: __dirname
   })
-  client.initialize();
 })
 
-
-app.get('/isConected', async (req, res) => {
-  client.on("ready", () => {
-    res.send(true)
-  })
-
-  client.on("auth_failure", () => {
-    res.send(false)
-  })
-
-})
 
 
 app.post('/runBot', async (req, res) => {
 
   const {
-    presentacion,
+    viernes,
+    classroomColor,
+    createGroups
+  } = req.body
+
+  const sabado = viernes + 1
+  const domingo = viernes + 2
+
+  const { presentacion,
     info1,
     info2,
     info3,
@@ -92,73 +88,217 @@ app.post('/runBot', async (req, res) => {
     opciones,
     respuestaInstructor,
     ultimoMensaje,
-    viernes,
-    classroomColor,
-  } = req.body
-
-  const sabado = viernes + 1
-  const domingo = viernes + 2
-
-  //Descriptions
-  const DESCRIPTION_GROUPS = textsGenerator({ viernes, classroomColor }).DESCRIPTION_GROUPS
-  const monthNumber = new Date().getMonth() + 1
-
-  //Creacion de grupos
-  let ml = await (await client.getContacts()).filter(e => e.id.user.includes("27227255"))
-  let groupCreated = {
-    HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Heimlich Adultos ⛑️`, ml),
-    RCP_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Rcp en Adultos ⛑️`, ml),
-    HEIMLICH_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Heimlich en Bebés 🤱🏽👨🏽‍🍼`, ml),
-    RCP_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Rcp en Bebés 🤱🏽👨🏽‍🍼`, ml),
-    INFARTO_ACV: await client.createGroup(`${viernes}/${monthNumber} Infarto y ACV 🫀🧠`, ml),
-  }
-
-
-  //Declaracion de Handlers
-  let groupsHandlers = {
-    INFARTO_ACV: undefined,
-    RCP_BEBÉS: undefined,
-    HEIMLICH_BEBÉS: undefined,
-    RCP_ADULTOS: undefined,
-    HEIMLICH_ADULTOS: undefined,
-  }
-
-  //Inicializacion de handlers, y agrego descripciones
-  await sleep(10)
-  //Busco todos los chats de grupos
-  let groupChats = (await client.getChats()).filter(eChat => {
-    return eChat.isGroup
+    DESCRIPTION_GROUPS
+  } = textsGenerator({
+    viernes, classroomColor
   })
 
-  //Despineo todos los grupos
-  groupChats.forEach(e => new GroupChat(client, e).unpin())
+  const monthNumber = new Date().getMonth() + 1
 
-  //Codigos
-  let groupsCodes = {
-    INFARTO_ACV: undefined,
-    RCP_BEBÉS: undefined,
-    HEIMLICH_BEBÉS: undefined,
-    RCP_ADULTOS: undefined,
-    HEIMLICH_ADULTOS: undefined,
-  }
-  for (let i in groupsHandlers) {
-    let groupChat = groupChats.find(e => e.id.user === groupCreated[i].gid.user)
-    groupsHandlers[i] = new GroupChat(client, groupChat)
+  client.on('message', async msg => {
+    const from = msg.from
 
-    //Agrego descripciones
-    await groupsHandlers[i].setDescription(DESCRIPTION_GROUPS[i])
-    //Agrego códigos
-    groupsCodes[i] = "https://chat.whatsapp.com/" + await groupsHandlers[i].getInviteCode()
-  }
+    //Si lo escribio, es que es nuevo
+    if (await writeChatPromise()) {
+      const firstMessage = [
+        `🤖 *Hola soy un bot, me llamo Dominique Larrey, intentaré responder a sus consultas.* 
+  Como recibimos muchísimas preguntas me contrataron a mi para responderlas, como soy un robot no me canso, aunque podrían pagarme algo no? 😒
+  `
+      ].join(' ')
+
+      await msg.reply(firstMessage)
+      await msg.reply(presentacion)
+      await msg.reply(info1)
+      await msg.reply(info2)
+      await msg.reply(info3)
+      await msg.reply(info4)
+      await msg.reply(`*Modelos de certificados*
+      https://photos.app.goo.gl/Grm54bW161weeXB26`)
+      await sendMedia(from, 'todosCertificados.png')
+      await sendMedia(from, 'Mundo hd.png')
+      await msg.reply(ultimoMensaje)
+
+      if (CURSO_EN_TRANSCURSO) {
+        await msg.reply("*🤖IMPORTANTE* el instructor está dando un curso, podés sumarte mediante este enlace y luego inscribirte bien. https://meet.google.com/ijj-pwnn-itf")
+      }
+      else if (PASO_EL_PRIMER_CURSO) {
+        await msg.reply("*🤖IMPORTANTE* algunos cursos ya empezaron, pero puede ver las clases grabadas.")
+      }
+    }
+
+    else {
+      msg.body = msg.body.toLowerCase()
+
+      if (msg.body === 'instructor' || msg.body === 'intructor' || msg.body === 'ezequiel' || msg.body === 'instrutor') {
+        msg.reply(respuestaInstructor)
+      }
+      else if (msg.body === "1" || msg.body == "*1*" || msg.body == "uno") {
+        await msg.reply(info1)
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "2" || msg.body == "*2*" || msg.body == "dos") {
+        await msg.reply(info2)
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "3" || msg.body == "*3*" || msg.body == "tres") {
+        await msg.reply(info3)
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "4" || msg.body == "*4*" || msg.body == "cuatro") {
+        await msg.reply(info4)
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "5" || msg.body == "*5*" || msg.body == "cinco" || msg.body == "sinco") {
+        await msg.reply("*El instructor es de Buenos Aires, pero los cursos se dan en todo el pais.*")
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "6" || msg.body == "*6*" || msg.body == "seis") {
+        await msg.reply("*Las clases son 100% virtuales*")
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "7" || msg.body == "*7*" || msg.body == "siete") {
+        await msg.reply("*Luego de aprobar un curso, si abono un certificado deberá completar una planilla con sus datos para solicitarlo, y en menos de un minuto le estará llegando a su casilla de mail, firmado digitalmente y con dos códigos de autenticidad. Al enviar la planilla un programa comprueba si es de las personas aprobadas, genera un certificado y se los envia automaticamente*")
+        await msg.reply(ultimoMensaje)
+      }
+
+      else if (msg.body === "8" || msg.body == "*8*" || msg.body == "ocho") {
+        await msg.reply(`*Modelos de certificados*
+        https://photos.app.goo.gl/Grm54bW161weeXB26`)
+        await msg.reply(ultimoMensaje)
+
+      }
+
+      else if (msg.body === "cin" || msg.body == "cinthya" || msg.body == "mi amor" || msg.body == "eze mi amor" || msg.body == "eze mí amor" || msg.body == "mí amor") {
+        await msg.reply("Hola Cin hermosa ❤. ¿Como estás?")
+
+      }
+
+      else if (
+        msg.body === "🤖"
+        ||
+        msg.body === "como te llamas"
+        ||
+        msg.body === "como te llamás"
+      ) await sendMessage('*🤖 Soy el bot Dominique Larrey, tomo mi nombre del inventor de la ambulancia y del triage. "Dominique-Jean Larrey fue un cirujano que, en las guerras napoleónicas, creó el transporte por ambulancia e introdujo los principios de la sanidad militar moderna, realizando los primeros triaje en los campos de batalla.". Mas info en Wikipedia https://es.wikipedia.org/wiki/Dominique-Jean_Larrey*')
+
+      else if (msg.body == '!ping') {
+        msg.reply('pong');
+      } else if (msg.body == 'good morning') {
+        msg.reply('selamat pagi');
+      } else if (msg.body == '!groups') {
+        client.getChats().then(chats => {
+          const groups = chats.filter(chat => chat.isGroup);
+
+          if (groups.length == 0) {
+            msg.reply('You have no group yet.');
+          } else {
+            let replyMsg = '*YOUR GROUPS*\n\n';
+            groups.forEach((group, i) => {
+              replyMsg += `ID: ${group.id._serialized}\nName: ${group.name}\n\n`;
+            });
+            replyMsg += '_You can use the group id to send a message to the group._'
+            msg.reply(replyMsg);
+          }
+        });
+      }
+    }
+
+    // Downloading media
+    if (msg.hasMedia) {
+      msg.downloadMedia().then(media => {
+        // To better understanding
+        // Please look at the console what data we get
+        console.log("Media a descargar");
+
+        if (media) {
+          // The folder to store: change as you want!
+          // Create if not exists
+          const mediaPath = './downloaded-media/';
+
+          if (!fs.existsSync(mediaPath)) {
+            fs.mkdirSync(mediaPath);
+          }
+
+          // Get the file extension by mime-type
+          const extension = mime.extension(media.mimetype);
+
+          // Filename: change as you want! 
+          // I will use the time for this example
+          // Why not use media.filename? Because the value is not certain exists
+          const filename = new Date().getTime();
+
+          const fullFilename = mediaPath + filename + '.' + extension;
+
+          // Save to file
+          try {
+            fs.writeFileSync(fullFilename, media.data, { encoding: 'base64' });
+            console.log('File downloaded successfully!', fullFilename);
+          } catch (err) {
+            console.log('Failed to save the file:', err);
+          }
+        }
+      });
+    }
+
+  });
 
 
-  //Pineo los primeros 3
-  await groupsHandlers.HEIMLICH_BEBÉS.pin()
-  await groupsHandlers.RCP_BEBÉS.pin()
-  await groupsHandlers.INFARTO_ACV.pin()
+  client.on('ready', async () => {
+    if (createGroups) {//Creacion de grupos
+      let ml = await (await client.getContacts()).filter(e => e.id.user.includes("27227255"))
+      let groupCreated = {
+        HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Heimlich Adultos ⛑️`, ml),
+        RCP_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Rcp en Adultos ⛑️`, ml),
+        HEIMLICH_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Heimlich en Bebés 🤱🏽👨🏽‍🍼`, ml),
+        RCP_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Rcp en Bebés 🤱🏽👨🏽‍🍼`, ml),
+        INFARTO_ACV: await client.createGroup(`${viernes}/${monthNumber} Infarto y ACV 🫀🧠`, ml),
+      }
+      //Declaracion de Handlers
+      let groupsHandlers = {
+        INFARTO_ACV: undefined,
+        RCP_BEBÉS: undefined,
+        HEIMLICH_BEBÉS: undefined,
+        RCP_ADULTOS: undefined,
+        HEIMLICH_ADULTOS: undefined,
+      }
+      await sleep(10)
+      //Busco todos los chats de grupos
+      let groupChats = (await client.getChats()).filter(eChat => {
+        return eChat.isGroup
+      })
+      //Despineo todos los grupos
+      groupChats.forEach(e => new GroupChat(client, e).unpin())
+      //Codigos
+      let groupsCodes = {
+        INFARTO_ACV: undefined,
+        RCP_BEBÉS: undefined,
+        HEIMLICH_BEBÉS: undefined,
+        RCP_ADULTOS: undefined,
+        HEIMLICH_ADULTOS: undefined,
+      }
+      for (let i in groupsHandlers) {
+        let groupChat = groupChats.find(e => e.id.user === groupCreated[i].gid.user)
+        groupsHandlers[i] = new GroupChat(client, groupChat)
+        //Agrego descripciones
+        await groupsHandlers[i].setDescription(DESCRIPTION_GROUPS[i])
+        //Agrego códigos
+        groupsCodes[i] = "https://chat.whatsapp.com/" + await groupsHandlers[i].getInviteCode()
+      }
+      //Pineo los primeros 3
+      await groupsHandlers.HEIMLICH_BEBÉS.pin()
+      await groupsHandlers.RCP_BEBÉS.pin()
+      await groupsHandlers.INFARTO_ACV.pin()
+      res.json(groupsCodes)
+    }
+  });
 
-  res.json(groupsCodes)
-
+  client.initialize()
 
 });
 
@@ -192,7 +332,10 @@ io.on('connection', function (socket) {
 
   client.on('auth_failure', function (session) {
     try {
-      fs.unlinkSync(SESSION_FILE_PATH)
+      fs.unlink(SESSION_FILE_PATH, function (err) {
+        if (err) return console.log(err);
+        console.log('Archivo de session desconectado');
+      })
     } catch (error) {
       console.log(error);
     }
@@ -206,10 +349,10 @@ io.on('connection', function (socket) {
     socket.emit('message', 'Whatsapp esta desconectado!');
 
     try {
-      fs.unlinkSync(SESSION_FILE_PATH, function (err) {
+      fs.unlink(SESSION_FILE_PATH, function (err) {
         if (err) return console.log(err);
         console.log('Archivo de session desconectado');
-      });
+      })
     } catch (error) {
 
     }
@@ -219,158 +362,10 @@ io.on('connection', function (socket) {
   });
 });
 
-client.on('message', async msg => {
-  const from = msg.from
 
-  //Si lo escribio, es que es nuevo
-  if (await writeChatPromise()) {
-    const firstMessage = [
-      `🤖 *Hola soy un bot, me llamo Dominique Larrey, intentaré responder a sus consultas.* 
-Como recibimos muchísimas preguntas me contrataron a mi para responderlas, como soy un robot no me canso, aunque podrían pagarme algo no? 😒
-`
-    ].join(' ')
 
-    await msg.reply(firstMessage)
-    await msg.reply(presentacion)
-    await msg.reply(info1)
-    await msg.reply(info2)
-    await msg.reply(info3)
-    await msg.reply(info4)
-    await msg.reply(`*Modelos de certificados*
-    https://photos.app.goo.gl/Grm54bW161weeXB26`)
-    await sendMedia(from, 'todosCertificados.png')
-    await sendMedia(from, 'Mundo hd.png')
-    await msg.reply(ultimoMensaje)
 
-    if (CURSO_EN_TRANSCURSO) {
-      await msg.reply("*🤖IMPORTANTE* el instructor está dando un curso, podés sumarte mediante este enlace y luego inscribirte bien. https://meet.google.com/ijj-pwnn-itf")
-    }
-    else if (PASO_EL_PRIMER_CURSO) {
-      await msg.reply("*🤖IMPORTANTE* algunos cursos ya empezaron, pero puede ver las clases grabadas.")
-    }
-  }
 
-  else {
-    msg.body = msg.body.toLowerCase()
-
-    if (msg.body === 'instructor' || msg.body === 'intructor' || msg.body === 'ezequiel' || msg.body === 'instrutor') {
-      msg.reply(respuestaInstructor)
-    }
-    else if (msg.body === "1" || msg.body == "*1*" || msg.body == "uno") {
-      await msg.reply(info1)
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "2" || msg.body == "*2*" || msg.body == "dos") {
-      await msg.reply(info2)
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "3" || msg.body == "*3*" || msg.body == "tres") {
-      await msg.reply(info3)
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "4" || msg.body == "*4*" || msg.body == "cuatro") {
-      await msg.reply(info4)
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "5" || msg.body == "*5*" || msg.body == "cinco" || msg.body == "sinco") {
-      await msg.reply("*El instructor es de Buenos Aires, pero los cursos se dan en todo el pais.*")
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "6" || msg.body == "*6*" || msg.body == "seis") {
-      await msg.reply("*Las clases son 100% virtuales*")
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "7" || msg.body == "*7*" || msg.body == "siete") {
-      await msg.reply("*Luego de aprobar un curso, si abono un certificado deberá completar una planilla con sus datos para solicitarlo, y en menos de un minuto le estará llegando a su casilla de mail, firmado digitalmente y con dos códigos de autenticidad. Al enviar la planilla un programa comprueba si es de las personas aprobadas, genera un certificado y se los envia automaticamente*")
-      await msg.reply(ultimoMensaje)
-    }
-
-    else if (msg.body === "8" || msg.body == "*8*" || msg.body == "ocho") {
-      await msg.reply(`*Modelos de certificados*
-      https://photos.app.goo.gl/Grm54bW161weeXB26`)
-      await msg.reply(ultimoMensaje)
-
-    }
-
-    else if (msg.body === "cin" || msg.body == "cinthya" || msg.body == "mi amor" || msg.body == "eze mi amor" || msg.body == "eze mí amor" || msg.body == "mí amor") {
-      await msg.reply("Hola Cin hermosa ❤. ¿Como estás?")
-
-    }
-
-    else if (
-      msg.body === "🤖"
-      ||
-      msg.body === "como te llamas"
-      ||
-      msg.body === "como te llamás"
-    ) await sendMessage('*🤖 Soy el bot Dominique Larrey, tomo mi nombre del inventor de la ambulancia y del triage. "Dominique-Jean Larrey fue un cirujano que, en las guerras napoleónicas, creó el transporte por ambulancia e introdujo los principios de la sanidad militar moderna, realizando los primeros triaje en los campos de batalla.". Mas info en Wikipedia https://es.wikipedia.org/wiki/Dominique-Jean_Larrey*')
-
-    else if (msg.body == '!ping') {
-      msg.reply('pong');
-    } else if (msg.body == 'good morning') {
-      msg.reply('selamat pagi');
-    } else if (msg.body == '!groups') {
-      client.getChats().then(chats => {
-        const groups = chats.filter(chat => chat.isGroup);
-
-        if (groups.length == 0) {
-          msg.reply('You have no group yet.');
-        } else {
-          let replyMsg = '*YOUR GROUPS*\n\n';
-          groups.forEach((group, i) => {
-            replyMsg += `ID: ${group.id._serialized}\nName: ${group.name}\n\n`;
-          });
-          replyMsg += '_You can use the group id to send a message to the group._'
-          msg.reply(replyMsg);
-        }
-      });
-    }
-  }
-
-  // Downloading media
-  if (msg.hasMedia) {
-    msg.downloadMedia().then(media => {
-      // To better understanding
-      // Please look at the console what data we get
-      console.log("Media a descargar");
-
-      if (media) {
-        // The folder to store: change as you want!
-        // Create if not exists
-        const mediaPath = './downloaded-media/';
-
-        if (!fs.existsSync(mediaPath)) {
-          fs.mkdirSync(mediaPath);
-        }
-
-        // Get the file extension by mime-type
-        const extension = mime.extension(media.mimetype);
-
-        // Filename: change as you want! 
-        // I will use the time for this example
-        // Why not use media.filename? Because the value is not certain exists
-        const filename = new Date().getTime();
-
-        const fullFilename = mediaPath + filename + '.' + extension;
-
-        // Save to file
-        try {
-          fs.writeFileSync(fullFilename, media.data, { encoding: 'base64' });
-          console.log('File downloaded successfully!', fullFilename);
-        } catch (err) {
-          console.log('Failed to save the file:', err);
-        }
-      }
-    });
-  }
-
-});
 
 // console.log(client.getInviteInfo());
 app.post('/disconnect', (req, res) => {
