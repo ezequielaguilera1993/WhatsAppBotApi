@@ -25,12 +25,12 @@
     "qrcode": "^1.4.4",
     "qrcode-terminal": "^0.12.0",
     "socket.io": "2.3.0",
-    "whatsapp-web.js": "^1.14.1"
-  },
-  "devDependencies": {
+    "whatsapp-web.js": "^1.14.1",
     "@types/node": "^16.10.1",
-    "nodemon": "^2.0.13",
     "ts-node": "^10.2.1",
     "typescript": "^4.4.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.13"
   }
 }
