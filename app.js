@@ -18,7 +18,6 @@ const server = http.createServer(app);
 const io = socketIO(server);
 const qrcodeGen = require('qrcode-terminal');
 const GroupChat = require('whatsapp-web.js/src/structures/GroupChat');
-
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({
