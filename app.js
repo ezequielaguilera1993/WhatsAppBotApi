@@ -11,7 +11,7 @@ const axios = require('axios');
 const mime = require('mime-types');
 const cors = require('cors')
 const port = process.env.PORT || 8000;
-const { textsGenerator } = require('./_textGenerator.ts');
+const { textsGenerator } = require('./_textGenerator.js');
 // const { GroupChat } = require('whatsapp-web.js');
 const app = express();
 const server = http.createServer(app);
@@ -90,7 +90,6 @@ app.post('/runBot', async (req, res) => {
     viernes,
     classroomColor,
   } = req.body
-  console.log("aca");
 
   const sabado = viernes + 1
   const domingo = viernes + 2
@@ -126,12 +125,25 @@ app.post('/runBot', async (req, res) => {
     return eChat.isGroup
   })
 
+  //Despineo todos los grupos
+  groupChats.forEach(e => new GroupChat(client, e).unpin())
+
+  //Codigos
+  let groupsCodes = {
+    INFARTO_ACV: undefined,
+    RCP_BEBÉS: undefined,
+    HEIMLICH_BEBÉS: undefined,
+    RCP_ADULTOS: undefined,
+    HEIMLICH_ADULTOS: undefined,
+  }
   for (let i in groupsHandlers) {
     let groupChat = groupChats.find(e => e.id.user === groupCreated[i].gid.user)
     groupsHandlers[i] = new GroupChat(client, groupChat)
 
     //Agrego descripciones
     await groupsHandlers[i].setDescription(DESCRIPTION_GROUPS[i])
+    //Agrego códigos
+    groupsCodes[i] = "https://chat.whatsapp.com/" + await groupsHandlers[i].getInviteCode()
   }
 
 
@@ -140,7 +152,7 @@ app.post('/runBot', async (req, res) => {
   await groupsHandlers.RCP_BEBÉS.pin()
   await groupsHandlers.INFARTO_ACV.pin()
 
-  res.sendStatus(200)
+  res.json(groupsCodes)
 
 
 });
