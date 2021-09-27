@@ -60,10 +60,13 @@ const monthNumber = new Date().getMonth() + 1
 let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
 //
 app.get("/get", (req, res) => {
-  res.send({ client, session: existSession(), viernes })
+
+  res.send({ client: !!client.pupBrowser, session: existSession(), viernes: viernes })
 })
 
 app.get('/', (req, res) => {
+  console.log("LOG: INIT/");
+
   res.sendFile('index.html', {
     root: __dirname
   })
@@ -71,6 +74,7 @@ app.get('/', (req, res) => {
 
 
 app.post('/runBot', async (req, res) => {
+  console.log("LOG: /runBot");
 
   const {
     viernes: viernesReq,
@@ -272,6 +276,8 @@ app.post('/runBot', async (req, res) => {
 
 
 app.post("/createGroups", async (req, res) => {
+  console.log("LOG: /createGroups");
+
   let ml = await (await client.getContacts()).filter(e => e.id.user.includes("27227255"))
   let groupCreated = {
     HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Heimlich Adultos ⛑️`, ml),
@@ -325,6 +331,8 @@ app.post("/createGroups", async (req, res) => {
 io.on('connection', function (socket) {
   socket.emit('message', `Esperar a conectarse con el bot. Puede tardar hasta 1 minuto`);
   client.on('qr', (qr) => {
+    console.log("LOG: qr");
+
     if (!existSession()) {
       qrcode.toDataURL(qr, (err, url) => {
         socket.emit('qr', url);
@@ -339,6 +347,8 @@ io.on('connection', function (socket) {
   });
 
   client.on('authenticated', (session) => {
+    console.log("LOG: authenticated");
+
     socket.emit('authenticated', 'Whatsapp autenticado!');
     socket.emit('message', 'Whatsapp autenticado!');
     sessionCfg = session;
@@ -350,6 +360,8 @@ io.on('connection', function (socket) {
   });
 
   client.on('auth_failure', function (session) {
+    console.log("LOG: auth_failure");
+
     try {
       fs.unlink(SESSION_FILE_PATH, function (err) {
         if (err) return console.log(err);
@@ -366,7 +378,7 @@ io.on('connection', function (socket) {
 
   client.on('disconnected', (reason) => {
     socket.emit('message', 'Whatsapp esta desconectado!');
-
+    console.log("LOG: diconect");
     try {
       fs.unlink(SESSION_FILE_PATH, function (err) {
         if (err) return console.log(err);
