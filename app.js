@@ -67,33 +67,46 @@ app.get('/', (req, res) => {
   })
 })
 
-
+const monthNumber = new Date().getMonth() + 1
+let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
+//
 
 app.post('/runBot', async (req, res) => {
 
   const {
-    viernes,
+    viernes: viernesReq,
     classroomColor,
-    createGroups
   } = req.body
 
-  const sabado = viernes + 1
-  const domingo = viernes + 2
+  viernes = viernesReq
+  sabado = viernes + 1
+  domingo = viernes + 2
 
-  const { presentacion,
-    info1,
-    info2,
-    info3,
-    info4,
-    opciones,
-    respuestaInstructor,
-    ultimoMensaje,
-    DESCRIPTION_GROUPS
+  const {
+    presentacion: presentacionGenerated,
+    info1: info1Generated,
+    info2: info2Generated,
+    info3: info3Generated,
+    info4: info4Generated,
+    opciones: opcionesGenerated,
+    respuestaInstructor: respuestaInstructorGenerated,
+    ultimoMensaje: ultimoMensajeGenerated,
+    DESCRIPTION_GROUPS: DESCRIPTION_GROUPSGenerated
   } = textsGenerator({
     viernes, classroomColor
   })
 
-  const monthNumber = new Date().getMonth() + 1
+  presentacion = presentacionGenerated
+  info1 = info1Generated
+  info2 = info2Generated
+  info3 = info3Generated
+  info4 = info4Generated
+  opciones = opcionesGenerated
+  respuestaInstructor = respuestaInstructorGenerated
+  ultimoMensaje = ultimoMensajeGenerated
+  DESCRIPTION_GROUPS = DESCRIPTION_GROUPSGenerated
+
+
 
   client.on('message', async msg => {
     const from = msg.from
@@ -250,57 +263,64 @@ app.post('/runBot', async (req, res) => {
 
 
   client.on('ready', async () => {
-    if (createGroups) {//Creacion de grupos
-      let ml = await (await client.getContacts()).filter(e => e.id.user.includes("27227255"))
-      let groupCreated = {
-        HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Heimlich Adultos ⛑️`, ml),
-        RCP_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Rcp en Adultos ⛑️`, ml),
-        HEIMLICH_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Heimlich en Bebés 🤱🏽👨🏽‍🍼`, ml),
-        RCP_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Rcp en Bebés 🤱🏽👨🏽‍🍼`, ml),
-        INFARTO_ACV: await client.createGroup(`${viernes}/${monthNumber} Infarto y ACV 🫀🧠`, ml),
-      }
-      //Declaracion de Handlers
-      let groupsHandlers = {
-        INFARTO_ACV: undefined,
-        RCP_BEBÉS: undefined,
-        HEIMLICH_BEBÉS: undefined,
-        RCP_ADULTOS: undefined,
-        HEIMLICH_ADULTOS: undefined,
-      }
-      await sleep(10)
-      //Busco todos los chats de grupos
-      let groupChats = (await client.getChats()).filter(eChat => {
-        return eChat.isGroup
-      })
-      //Despineo todos los grupos
-      groupChats.forEach(e => new GroupChat(client, e).unpin())
-      //Codigos
-      let groupsCodes = {
-        INFARTO_ACV: undefined,
-        RCP_BEBÉS: undefined,
-        HEIMLICH_BEBÉS: undefined,
-        RCP_ADULTOS: undefined,
-        HEIMLICH_ADULTOS: undefined,
-      }
-      for (let i in groupsHandlers) {
-        let groupChat = groupChats.find(e => e.id.user === groupCreated[i].gid.user)
-        groupsHandlers[i] = new GroupChat(client, groupChat)
-        //Agrego descripciones
-        await groupsHandlers[i].setDescription(DESCRIPTION_GROUPS[i])
-        //Agrego códigos
-        groupsCodes[i] = "https://chat.whatsapp.com/" + await groupsHandlers[i].getInviteCode()
-      }
-      //Pineo los primeros 3
-      await groupsHandlers.HEIMLICH_BEBÉS.pin()
-      await groupsHandlers.RCP_BEBÉS.pin()
-      await groupsHandlers.INFARTO_ACV.pin()
-      res.json(groupsCodes)
-    }
+    res.send(true)
   });
 
   client.initialize()
 
 });
+
+
+
+app.post("/createGroups", async (req, res) => {
+  let ml = await (await client.getContacts()).filter(e => e.id.user.includes("27227255"))
+  let groupCreated = {
+    HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Heimlich Adultos ⛑️`, ml),
+    RCP_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Rcp en Adultos ⛑️`, ml),
+    HEIMLICH_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Heimlich en Bebés 🤱🏽👨🏽‍🍼`, ml),
+    RCP_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Rcp en Bebés 🤱🏽👨🏽‍🍼`, ml),
+    INFARTO_ACV: await client.createGroup(`${viernes}/${monthNumber} Infarto y ACV 🫀🧠`, ml),
+  }
+  //Declaracion de Handlers
+  let groupsHandlers = {
+    INFARTO_ACV: undefined,
+    RCP_BEBÉS: undefined,
+    HEIMLICH_BEBÉS: undefined,
+    RCP_ADULTOS: undefined,
+    HEIMLICH_ADULTOS: undefined,
+  }
+
+  await sleep(10)
+
+  //Busco todos los chats de grupos
+  let groupChats = (await client.getChats()).filter(eChat => {
+    return eChat.isGroup
+  })
+  //Despineo todos los grupos
+  groupChats.forEach(e => new GroupChat(client, e).unpin())
+  //Codigos
+  let groupsCodes = {
+    INFARTO_ACV: undefined,
+    RCP_BEBÉS: undefined,
+    HEIMLICH_BEBÉS: undefined,
+    RCP_ADULTOS: undefined,
+    HEIMLICH_ADULTOS: undefined,
+  }
+  for (let i in groupsHandlers) {
+    let groupChat = groupChats.find(e => e.id.user === groupCreated[i].gid.user)
+    groupsHandlers[i] = new GroupChat(client, groupChat)
+    //Agrego descripciones
+    await groupsHandlers[i].setDescription(DESCRIPTION_GROUPS[i])
+    //Agrego códigos
+    groupsCodes[i] = "https://chat.whatsapp.com/" + await groupsHandlers[i].getInviteCode()
+  }
+  //Pineo los primeros 3
+  await groupsHandlers.HEIMLICH_BEBÉS.pin()
+  await groupsHandlers.RCP_BEBÉS.pin()
+  await groupsHandlers.INFARTO_ACV.pin()
+
+  res.send(groupsCodes)
+})
 
 // Socket IO
 io.on('connection', function (socket) {
