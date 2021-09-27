@@ -53,23 +53,31 @@ let client = new Client({
       '--disable-gpu'
     ],
   },
-  session: sessionCfg
+  // session: sessionCfg
 });
 
 const monthNumber = new Date().getMonth() + 1
 let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
 //
-app.get("/get", (req, res) => {
 
-  res.send({ client: !!client.pupBrowser, session: existSession(), viernes: viernes })
-})
-
-app.get('/', (req, res) => {
+app.get('/', async (req, res) => {
   console.log("LOG: INIT/");
+  console.log(client.pupBrowser && client.pupBrowser.close);
+  // try {
+  //   fs.unlinkSync('./whatsapp-session.json')
+  // } catch (error) {
+  //   console.log("no de pudo eliminar la session, en el INIT/");
+  // }
+  client.pupBrowser && client.pupBrowser.close && console.log("destroy") && await client.destroy()
 
   res.sendFile('index.html', {
     root: __dirname
   })
+})
+
+app.get("/get", (req, res) => {
+
+  res.send({ client: !!client.pupBrowser, session: existSession(), viernes: viernes })
 })
 
 
@@ -351,12 +359,13 @@ io.on('connection', function (socket) {
 
     socket.emit('authenticated', 'Whatsapp autenticado!');
     socket.emit('message', 'Whatsapp autenticado!');
-    sessionCfg = session;
-    fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err) {
-      if (err) {
-        console.error(err);
-      }
-    });
+    // sessionCfg = session;
+    // fs.writeFile(SESSION_FILE_PATH, JSON.stringify(session), function (err) {
+    //   if (err) {
+    //     console.error(err);
+    //   }
+    // });
+
   });
 
   client.on('auth_failure', function (session) {
