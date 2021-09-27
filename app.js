@@ -56,9 +56,11 @@ let client = new Client({
   session: sessionCfg
 });
 
+const monthNumber = new Date().getMonth() + 1
+let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
+//
 app.get("/get", (req, res) => {
-
-  res.send("Anda el get!")
+  res.send({ client, session: existSession(), viernes })
 })
 
 app.get('/', (req, res) => {
@@ -67,9 +69,6 @@ app.get('/', (req, res) => {
   })
 })
 
-const monthNumber = new Date().getMonth() + 1
-let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
-//
 
 app.post('/runBot', async (req, res) => {
 
