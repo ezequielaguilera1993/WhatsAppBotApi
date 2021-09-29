@@ -1,3 +1,4 @@
+import { viernesAddDays } from "./utils"
 
 export type upDateBotValuesType = {
   certiX1?: number
@@ -42,8 +43,8 @@ function textsGenerator({
 
 
   //Autoresponse mensages/////////////////////////////////////////////////////////////////////////////////////////
-  const sabado = viernes + 1
-  const domingo = viernes + 2
+  const sabado = viernesAddDays(viernes, 1)
+  const domingo = viernesAddDays(viernes, 2)
 
   const presentacion = `*🤖 Le dejo mas info sobre todos los cursos*
 *1)* Cómo inscribirse de forma gratuita (sin certificado)
@@ -119,7 +120,7 @@ También puede abonarlos mediante una transferencia bancaria al 0140389103703753
 • Envie un *7* para saber cuanto tarda en llegar el certificado
 • Envie un *8* para ver modelos de certificados`
 
-  const respuestaInstructor = `🤖 *El instructor Ezequiel se contactará con usted cuando sea posible (estamos atendiendo muchas consultas)* ⏳ \n_Mientras tanto puede consultarme a mi lo que desee_
+  const respuestaInstructor = `🤖 *Los instructores se contactaran con usted cuando sea posible (estamos atendiendo muchas consultas)* ⏳ \n_Mientras tanto puede consultarme a mi lo que desee_
          
 *Escriba el numero sin letras o números adicionales, luego envie el mensaje y le llegara la info que precisa.*
   
@@ -127,17 +128,17 @@ ${opciones}
 
     *🤖 IMPORTANTE* si contesta algo diferente a lo de esta lista no podre responderle de manera adecuada.
 
-    _El instructor se contactará a la brevedad_
+    _Los instructores se contactaran a la brevedad_
 `
 
   const ultimoMensaje = `*🤖 Si le quedó una duda envieme un mensaje con algunos de las siguientes opciones para tener mas informacion*
 
 _Escriba a los números sin letras o números adicionales, luego envie el mensaje y le llegara la info que precisa._
         
-• Escriba la palabra *instructor* si desea hablar un tema en especifico con el instructor
+• Escriba la palabra *instructor* si desea hablar un tema en especifico con los instructores
 ${opciones}
 
- *🤖 IMPORTANTE* si contesta algo diferente a lo de esta lista no podre responderle de manera adecuada. Recuerde que si desea hablar con el instructor debe enviar la palabra *instructor* como mensaje, yo me encargo de avisarle. 📬
+ *🤖 IMPORTANTE* si contesta algo diferente a lo de esta lista no podre responderle de manera adecuada. Recuerde que si desea con alguno de los instructores debe enviar la palabra *instructor* como mensaje, yo me encargo de avisarle. 📬
 `
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

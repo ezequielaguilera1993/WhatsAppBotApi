@@ -15,20 +15,22 @@
   "author": "Nur Muhammad (modify)",
   "license": "MIT",
   "dependencies": {
+    "@types/node": "^16.10.1",
     "axios": "^0.20.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.0",
     "express-validator": "^6.9.2",
+    "forever": "^4.0.1",
+    "forever-monitor": "^3.0.3",
     "http": "0.0.1-security",
     "mime-types": "^2.1.32",
     "qrcode": "^1.4.4",
     "qrcode-terminal": "^0.12.0",
     "socket.io": "2.3.0",
-    "whatsapp-web.js": "^1.14.1",
-    "@types/node": "^16.10.1",
     "ts-node": "^10.2.1",
-    "typescript": "^4.4.3"
+    "typescript": "^4.4.3",
+    "whatsapp-web.js": "^1.14.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.13"

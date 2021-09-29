@@ -19,9 +19,7 @@ const io = socketIO(server);
 const qrcodeGen = require('qrcode-terminal');
 const GroupChat = require('whatsapp-web.js/src/structures/GroupChat');
 
-
 app.use(cors())
-
 app.use(express.json());
 app.use(express.urlencoded({
   extended: true
@@ -31,12 +29,11 @@ app.use(fileUpload({
 }));
 
 const SESSION_FILE_PATH = './whatsapp-session.json';
-let sessionCfg;
-let existSession = () => fs.existsSync(SESSION_FILE_PATH)
-if (existSession()) {
-  sessionCfg = require(SESSION_FILE_PATH);
-}
-
+// let sessionCfg;
+// let existSession = () => fs.existsSync(SESSION_FILE_PATH)
+// if (existSession()) {
+//   sessionCfg = require(SESSION_FILE_PATH);
+// }
 let client = new Client({
   qrTimeoutMs: 0,
   restartOnAuthFail: true,
@@ -53,33 +50,31 @@ let client = new Client({
       '--disable-gpu'
     ],
   },
-  // session: sessionCfg
 });
 
 const monthNumber = new Date().getMonth() + 1
 let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
 //
-
 app.get('/', async (req, res) => {
+
   console.log("LOG: INIT/");
-  console.log(client.pupBrowser && client.pupBrowser.close);
   // try {
   //   fs.unlinkSync('./whatsapp-session.json')
   // } catch (error) {
   //   console.log("no de pudo eliminar la session, en el INIT/");
   // }
-  client.pupBrowser && client.pupBrowser.close && console.log("destroy") && await client.destroy()
+  // client.pupBrowser && client.pupBrowser.close && console.log("destroy") && await client.destroy()
 
   res.sendFile('index.html', {
     root: __dirname
   })
+
 })
 
 app.get("/get", (req, res) => {
 
-  res.send({ client: !!client.pupBrowser, session: existSession(), viernes: viernes })
+  res.send({ client: !!client.pupBrowser, viernes: viernes })
 })
-
 
 app.post('/runBot', async (req, res) => {
   console.log("LOG: /runBot");
@@ -90,8 +85,8 @@ app.post('/runBot', async (req, res) => {
   } = req.body
 
   viernes = viernesReq
-  sabado = viernes + 1
-  domingo = viernes + 2
+  sabado = viernesAddDays(viernes, 1)
+  domingo = viernesAddDays(viernes, 2)
 
   const {
     presentacion: presentacionGenerated,
@@ -272,16 +267,14 @@ app.post('/runBot', async (req, res) => {
 
   });
 
-
   client.on('ready', async () => {
+    console.log('LOG: ready, run bot');
     res.send(true)
   });
 
   client.initialize()
 
 });
-
-
 
 app.post("/createGroups", async (req, res) => {
   console.log("LOG: /createGroups");
@@ -337,21 +330,21 @@ app.post("/createGroups", async (req, res) => {
 
 // Socket IO
 io.on('connection', function (socket) {
-  socket.emit('message', `Esperar a conectarse con el bot. Puede tardar hasta 1 minuto`);
+  // socket.emit('message', `Esperar a conectarse con el bot. Puede tardar hasta 1 minuto`);
   client.on('qr', (qr) => {
     console.log("LOG: qr");
 
-    if (!existSession()) {
-      qrcode.toDataURL(qr, (err, url) => {
-        socket.emit('qr', url);
-        socket.emit('message', 'Escanear QR. Activar el bot puede tardar hasta un momento. Es recomendable eliminar las sesiones en WhatsApp');
-      });
-    }
+    qrcode.toDataURL(qr, (err, url) => {
+      socket.emit('qr', url);
+      socket.emit('message', 'Escanear QR. Activar el bot puede tardar hasta un minuto.');
+    });
   });
 
   client.on('ready', async () => {
-    socket.emit('ready', 'Whatsapp conectado🎉🥳');
-    socket.emit('message', 'Whatsapp conectado🎉🥳');
+    console.log('LOG: ready, IO')
+
+    socket.emit('ready', 'Bot de Whatsapp creado🎉🥳');
+    socket.emit('message', 'Bot de Whatsapp creado🎉🥳');
   });
 
   client.on('authenticated', (session) => {
@@ -371,14 +364,6 @@ io.on('connection', function (socket) {
   client.on('auth_failure', function (session) {
     console.log("LOG: auth_failure");
 
-    try {
-      fs.unlink(SESSION_FILE_PATH, function (err) {
-        if (err) return console.log(err);
-        console.log('Archivo de session desconectado');
-      })
-    } catch (error) {
-      console.log(error);
-    }
     socket.emit('message', 'Autenticacion fallida, reiniciando...');
     console.log("auth fallida");
 
@@ -386,36 +371,17 @@ io.on('connection', function (socket) {
   });
 
   client.on('disconnected', (reason) => {
-    socket.emit('message', 'Whatsapp esta desconectado!');
-    console.log("LOG: diconect");
-    try {
-      fs.unlink(SESSION_FILE_PATH, function (err) {
-        if (err) return console.log(err);
-        console.log('Archivo de session desconectado');
-      })
-    } catch (error) {
-
-    }
-
+    // socket.emit('message', 'Whatsapp esta desconectado!');
+    console.log("LOG: diconect", reason);
     client.destroy();
-    client.initialize();
+    // client.initialize();
   });
 });
-
-
-
-
-
 
 // console.log(client.getInviteInfo());
 app.post('/disconnect', (req, res) => {
 
 })
-
-
-
-
-
 
 const checkRegisteredNumber = async function (number) {
   const isRegistered = await client.isRegisteredUser(number);
@@ -607,7 +573,6 @@ app.post('/clear-message', [
 server.listen(port, function () {
   console.log('App running on *: ' + port);
 });
-
 
 function writeChatPromise(number) {
   const FILE_NAME = "chats.txt"
