@@ -11,7 +11,7 @@ const axios = require('axios');
 const mime = require('mime-types');
 const cors = require('cors')
 const port = process.env.PORT || 8000;
-const { textsGenerator } = require('./_textGenerator.js');
+const { textsGenerator } = require('./_textGenerator.ts');
 // const { GroupChat } = require('whatsapp-web.js');
 const app = express();
 const server = http.createServer(app);
@@ -52,7 +52,6 @@ let client = new Client({
   },
 });
 
-const monthNumber = new Date().getMonth() + 1
 let viernes, sabado, domingo, presentacion, info1, info2, info3, info4, opciones, respuestaInstructor, ultimoMensaje, DESCRIPTION_GROUPS
 //
 app.get('/', async (req, res) => {
@@ -76,17 +75,35 @@ app.get("/get", (req, res) => {
   res.send({ client: !!client.pupBrowser, viernes: viernes })
 })
 
+
+
+function getDatSplit(txt) {
+  return txt.split(",")[0]
+}
+
+function getMonthSplit(txt) {
+  return txt.split(",")[1]
+}
+
+let VIERNES, SABADO, DOMINGO
 app.post('/runBot', async (req, res) => {
+
   console.log("LOG: /runBot");
 
   const {
     viernes: viernesReq,
+    sabado: sabadoReq,
+    domingo: domingoReq,
     classroomColor,
   } = req.body
 
-  viernes = viernesReq
-  sabado = viernesAddDays(viernes, 1)
-  domingo = viernesAddDays(viernes, 2)
+  VIERNES = viernesReq
+  SABADO = sabadoReq
+  DOMINGO = domingoReq
+
+  viernes = getDatSplit(VIERNES)
+  sabado = getDatSplit(SABADO)
+  domingo = getDatSplit(DOMINGO)
 
   const {
     presentacion: presentacionGenerated,
@@ -99,7 +116,7 @@ app.post('/runBot', async (req, res) => {
     ultimoMensaje: ultimoMensajeGenerated,
     DESCRIPTION_GROUPS: DESCRIPTION_GROUPSGenerated
   } = textsGenerator({
-    viernes, classroomColor
+    viernes, sabado, domingo, classroomColor
   })
 
   presentacion = presentacionGenerated
@@ -111,8 +128,6 @@ app.post('/runBot', async (req, res) => {
   respuestaInstructor = respuestaInstructorGenerated
   ultimoMensaje = ultimoMensajeGenerated
   DESCRIPTION_GROUPS = DESCRIPTION_GROUPSGenerated
-
-
 
   client.on('message', async msg => {
     const from = msg.from
@@ -137,12 +152,6 @@ app.post('/runBot', async (req, res) => {
       await sendMedia(from, 'Mundo hd.png')
       await msg.reply(ultimoMensaje)
 
-      if (CURSO_EN_TRANSCURSO) {
-        await msg.reply("*🤖IMPORTANTE* el instructor está dando un curso, podés sumarte mediante este enlace y luego inscribirte bien. https://meet.google.com/ijj-pwnn-itf")
-      }
-      else if (PASO_EL_PRIMER_CURSO) {
-        await msg.reply("*🤖IMPORTANTE* algunos cursos ya empezaron, pero puede ver las clases grabadas.")
-      }
     }
 
     else {
@@ -279,13 +288,15 @@ app.post('/runBot', async (req, res) => {
 app.post("/createGroups", async (req, res) => {
   console.log("LOG: /createGroups");
 
-  let ml = await (await client.getContacts()).filter(e => e.id.user.includes("27227255"))
+
+  let ml = await (await client.getContacts()).filter(e => e.id.user.includes("28676833"))
+  console.log(ml);
   let groupCreated = {
-    HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Heimlich Adultos ⛑️`, ml),
-    RCP_ADULTOS: await client.createGroup(`${domingo}/${monthNumber} Rcp en Adultos ⛑️`, ml),
-    HEIMLICH_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Heimlich en Bebés 🤱🏽👨🏽‍🍼`, ml),
-    RCP_BEBÉS: await client.createGroup(`${sabado}/${monthNumber} Rcp en Bebés 🤱🏽👨🏽‍🍼`, ml),
-    INFARTO_ACV: await client.createGroup(`${viernes}/${monthNumber} Infarto y ACV 🫀🧠`, ml),
+    HEIMLICH_ADULTOS: await client.createGroup(`${domingo}/${getMonthSplit(DOMINGO)} Heimlich Adultos ⛑️`, ml),
+    RCP_ADULTOS: await client.createGroup(`${domingo}/${getMonthSplit(DOMINGO)} Rcp en Adultos ⛑️`, ml),
+    HEIMLICH_BEBÉS: await client.createGroup(`${sabado}/${getMonthSplit(SABADO)} Heimlich en Bebés 🤱🏽👨🏽‍🍼`, ml),
+    RCP_BEBÉS: await client.createGroup(`${sabado}/${getMonthSplit(SABADO)} Rcp en Bebés 🤱🏽👨🏽‍🍼`, ml),
+    INFARTO_ACV: await client.createGroup(`${viernes}/${getMonthSplit(VIERNES)} Infarto y ACV 🫀🧠`, ml),
   }
   //Declaracion de Handlers
   let groupsHandlers = {

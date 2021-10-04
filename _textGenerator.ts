@@ -1,4 +1,3 @@
-import { viernesAddDays } from "./utils"
 
 export type upDateBotValuesType = {
   certiX1?: number
@@ -7,6 +6,8 @@ export type upDateBotValuesType = {
   certiX4?: number
   certiX5?: number
   viernes: number
+  sabado: number
+  domingo: number
   classroomColor: "GRIS" | "VERDE" | "AZUL"
 }
 
@@ -37,14 +38,14 @@ function textsGenerator({
   certiX4 = 1400,
   certiX5 = 1600,
   viernes,
+  sabado,
+  domingo,
   classroomColor
 }: upDateBotValuesType): textType {
 
 
 
   //Autoresponse mensages/////////////////////////////////////////////////////////////////////////////////////////
-  const sabado = viernesAddDays(viernes, 1)
-  const domingo = viernesAddDays(viernes, 2)
 
   const presentacion = `*🤖 Le dejo mas info sobre todos los cursos*
 *1)* Cómo inscribirse de forma gratuita (sin certificado)
