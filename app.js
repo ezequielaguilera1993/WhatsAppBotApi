@@ -131,112 +131,115 @@ app.post('/runBot', async (req, res) => {
 
   client.on('message', async msg => {
     const from = msg.from
-
-    //Si lo escribio, es que es nuevo
-    if (await writeChatPromise()) {
-      const firstMessage = [
-        `🤖 *Hola soy un bot, me llamo Dominique Larrey, intentaré responder a sus consultas.* 
+    console.log(from);
+    console.log(msg.body);
+    if (from.includes("-")) console.log("Es un grupo!");
+    if (!from.includes("-")) {
+      //Si lo escribio, es que es nuevo
+      if (await writeChatPromise(from)) {
+        const firstMessage = [
+          `🤖 *Hola soy un bot, me llamo Dominique Larrey, intentaré responder a sus consultas.* 
   Como recibimos muchísimas preguntas me contrataron a mi para responderlas, como soy un robot no me canso, aunque podrían pagarme algo no? 😒
   `
-      ].join(' ')
+        ].join(' ')
 
-      await msg.reply(firstMessage)
-      await msg.reply(presentacion)
-      await msg.reply(info1)
-      await msg.reply(info2)
-      await msg.reply(info3)
-      await msg.reply(info4)
-      await msg.reply(`*Modelos de certificados*
-      https://photos.app.goo.gl/Grm54bW161weeXB26`)
-      await sendMedia(from, 'todosCertificados.png')
-      await sendMedia(from, 'Mundo hd.png')
-      await msg.reply(ultimoMensaje)
-
-    }
-
-    else {
-      msg.body = msg.body.toLowerCase()
-
-      if (msg.body === 'instructor' || msg.body === 'intructor' || msg.body === 'ezequiel' || msg.body === 'instrutor') {
-        msg.reply(respuestaInstructor)
-      }
-      else if (msg.body === "1" || msg.body == "*1*" || msg.body == "uno") {
+        await msg.reply(firstMessage)
+        await msg.reply(presentacion)
         await msg.reply(info1)
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "2" || msg.body == "*2*" || msg.body == "dos") {
         await msg.reply(info2)
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "3" || msg.body == "*3*" || msg.body == "tres") {
         await msg.reply(info3)
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "4" || msg.body == "*4*" || msg.body == "cuatro") {
         await msg.reply(info4)
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "5" || msg.body == "*5*" || msg.body == "cinco" || msg.body == "sinco") {
-        await msg.reply("*El instructor es de Buenos Aires, pero los cursos se dan en todo el pais.*")
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "6" || msg.body == "*6*" || msg.body == "seis") {
-        await msg.reply("*Las clases son 100% virtuales*")
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "7" || msg.body == "*7*" || msg.body == "siete") {
-        await msg.reply("*Luego de aprobar un curso, si abono un certificado deberá completar una planilla con sus datos para solicitarlo, y en menos de un minuto le estará llegando a su casilla de mail, firmado digitalmente y con dos códigos de autenticidad. Al enviar la planilla un programa comprueba si es de las personas aprobadas, genera un certificado y se los envia automaticamente*")
-        await msg.reply(ultimoMensaje)
-      }
-
-      else if (msg.body === "8" || msg.body == "*8*" || msg.body == "ocho") {
         await msg.reply(`*Modelos de certificados*
-        https://photos.app.goo.gl/Grm54bW161weeXB26`)
+      https://photos.app.goo.gl/Grm54bW161weeXB26`)
+        await sendMedia(from, 'todosCertificados.png')
+        await sendMedia(from, 'Mundo hd.png')
         await msg.reply(ultimoMensaje)
 
       }
 
-      else if (msg.body === "cin" || msg.body == "cinthya" || msg.body == "mi amor" || msg.body == "eze mi amor" || msg.body == "eze mí amor" || msg.body == "mí amor") {
-        await msg.reply("Hola Cin hermosa ❤. ¿Como estás?")
+      else {
+        msg.body = msg.body.toLowerCase()
 
-      }
+        if (msg.body === 'instructor' || msg.body === 'intructor' || msg.body === 'ezequiel' || msg.body === 'instrutor') {
+          msg.reply(respuestaInstructor)
+        }
+        else if (msg.body === "1" || msg.body == "*1*" || msg.body == "uno") {
+          await msg.reply(info1)
+          await msg.reply(ultimoMensaje)
+        }
 
-      else if (
-        msg.body === "🤖"
-        ||
-        msg.body === "como te llamas"
-        ||
-        msg.body === "como te llamás"
-      ) await sendMessage('*🤖 Soy el bot Dominique Larrey, tomo mi nombre del inventor de la ambulancia y del triage. "Dominique-Jean Larrey fue un cirujano que, en las guerras napoleónicas, creó el transporte por ambulancia e introdujo los principios de la sanidad militar moderna, realizando los primeros triaje en los campos de batalla.". Mas info en Wikipedia https://es.wikipedia.org/wiki/Dominique-Jean_Larrey*')
+        else if (msg.body === "2" || msg.body == "*2*" || msg.body == "dos") {
+          await msg.reply(info2)
+          await msg.reply(ultimoMensaje)
+        }
 
-      else if (msg.body == '!ping') {
-        msg.reply('pong');
-      } else if (msg.body == 'good morning') {
-        msg.reply('selamat pagi');
-      } else if (msg.body == '!groups') {
-        client.getChats().then(chats => {
-          const groups = chats.filter(chat => chat.isGroup);
+        else if (msg.body === "3" || msg.body == "*3*" || msg.body == "tres") {
+          await msg.reply(info3)
+          await msg.reply(ultimoMensaje)
+        }
 
-          if (groups.length == 0) {
-            msg.reply('You have no group yet.');
-          } else {
-            let replyMsg = '*YOUR GROUPS*\n\n';
-            groups.forEach((group, i) => {
-              replyMsg += `ID: ${group.id._serialized}\nName: ${group.name}\n\n`;
-            });
-            replyMsg += '_You can use the group id to send a message to the group._'
-            msg.reply(replyMsg);
-          }
-        });
+        else if (msg.body === "4" || msg.body == "*4*" || msg.body == "cuatro") {
+          await msg.reply(info4)
+          await msg.reply(ultimoMensaje)
+        }
+
+        else if (msg.body === "5" || msg.body == "*5*" || msg.body == "cinco" || msg.body == "sinco") {
+          await msg.reply("*El instructor es de Buenos Aires, pero los cursos se dan en todo el pais.*")
+          await msg.reply(ultimoMensaje)
+        }
+
+        else if (msg.body === "6" || msg.body == "*6*" || msg.body == "seis") {
+          await msg.reply("*Las clases son 100% virtuales*")
+          await msg.reply(ultimoMensaje)
+        }
+
+        else if (msg.body === "7" || msg.body == "*7*" || msg.body == "siete") {
+          await msg.reply("*Luego de aprobar un curso, si abono un certificado deberá completar una planilla con sus datos para solicitarlo, y en menos de un minuto le estará llegando a su casilla de mail, firmado digitalmente y con dos códigos de autenticidad. Al enviar la planilla un programa comprueba si es de las personas aprobadas, genera un certificado y se los envia automaticamente*")
+          await msg.reply(ultimoMensaje)
+        }
+
+        else if (msg.body === "8" || msg.body == "*8*" || msg.body == "ocho") {
+          await msg.reply(`*Modelos de certificados*
+        https://photos.app.goo.gl/Grm54bW161weeXB26`)
+          await msg.reply(ultimoMensaje)
+
+        }
+
+        else if (msg.body === "cin" || msg.body == "cinthya" || msg.body == "mi amor" || msg.body == "eze mi amor" || msg.body == "eze mí amor" || msg.body == "mí amor") {
+          await msg.reply("Hola Cin hermosa ❤. ¿Como estás?")
+
+        }
+
+        else if (
+          msg.body === "🤖"
+          ||
+          msg.body === "como te llamas"
+          ||
+          msg.body === "como te llamás"
+        ) await sendMessage('*🤖 Soy el bot Dominique Larrey, tomo mi nombre del inventor de la ambulancia y del triage. "Dominique-Jean Larrey fue un cirujano que, en las guerras napoleónicas, creó el transporte por ambulancia e introdujo los principios de la sanidad militar moderna, realizando los primeros triaje en los campos de batalla.". Mas info en Wikipedia https://es.wikipedia.org/wiki/Dominique-Jean_Larrey*')
+
+        else if (msg.body == '!ping') {
+          msg.reply('pong');
+        } else if (msg.body == 'good morning') {
+          msg.reply('selamat pagi');
+        } else if (msg.body == '!groups') {
+          client.getChats().then(chats => {
+            const groups = chats.filter(chat => chat.isGroup);
+
+            if (groups.length == 0) {
+              msg.reply('You have no group yet.');
+            } else {
+              let replyMsg = '*YOUR GROUPS*\n\n';
+              groups.forEach((group, i) => {
+                replyMsg += `ID: ${group.id._serialized}\nName: ${group.name}\n\n`;
+              });
+              replyMsg += '_You can use the group id to send a message to the group._'
+              msg.reply(replyMsg);
+            }
+          });
+        }
       }
     }
-
     // Downloading media
     if (msg.hasMedia) {
       msg.downloadMedia().then(media => {
@@ -601,9 +604,10 @@ function writeChatPromise(number) {
   return new Promise((resolve) => {
 
     const existNum = fs.readFileSync("./" + FILE_NAME, 'utf-8').toString().includes("~" + number + "~")
-
+    console.log("existNum", existNum);
     if (!existNum) {
       if (fs.existsSync("./" + FILE_NAME)) {//Existe actualizo lo que tiene con lo que le paso
+
         fs.readFile("./" + FILE_NAME, 'utf-8', (err, data) => {
           if (err) {
             console.log("Error leyendo el archivo")
@@ -625,6 +629,7 @@ function writeChatPromise(number) {
       resolve(false)
     }
   })
+
 }
 
 function sendMedia(number, fileName) {
